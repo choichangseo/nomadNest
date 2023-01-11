@@ -1,37 +1,50 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Movie } from './entities/Movie.entities';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateMovieDTO } from './dto/create-movie.dto';
+import { UpdateMovieDTO } from './dto/update-movie.dto';
+import { Movie } from './entities/Movie.entity';
 
 @Injectable()
 export class MoviesService {
-  private movies: Movie[] = [];
+  constructor(
+    @InjectRepository(Movie) private movieRepository: Repository<Movie>,
+  ) {}
 
-  getAll(): Movie[] {
-    return this.movies;
+  getAll(): Promise<Movie[]> {
+    return this.movieRepository.find();
   }
 
-  getOne(id: string): Movie {
-    const movie = this.movies.find((movie) => movie.id === +id);
+  getOne(movieID: number): Promise<Movie> {
+    const movie = this.movieRepository.findOne({ where: { movieID } });
     if (!movie) {
-      throw new NotFoundException(`Movie with ID ${id} not found.`);
+      throw new NotFoundException(`Movie with ID ${movieID} not found.`);
     }
     return movie;
   }
 
-  deleteOne(id: string) {
-    this.getOne(id);
-    this.movies = this.movies.filter((movie) => movie.id !== +id);
+  async deleteOne(movieID: number) {
+    const id = (await this.getOne(movieID)).movieID;
+    this.movieRepository.delete({ movieID: id });
   }
 
-  create(movieData) {
-    this.movies.push({
-      id: this.movies.length + 1,
-      ...movieData,
-    });
+  async create(movieData: CreateMovieDTO) {
+    const id = await this.getAll();
+    if (id.length === 0) {
+      this.movieRepository.save({
+        movieID: 1,
+        ...movieData,
+      });
+    } else {
+      this.movieRepository.save({
+        movieID: id.length + 1,
+        ...movieData,
+      });
+    }
   }
 
-  update(id: string, updateData) {
-    const movie = this.getOne(id);
-    this.deleteOne(id);
-    this.movies.push({ ...movie, ...updateData });
+  async update(movieID: number, updateData: UpdateMovieDTO) {
+    const movie = await this.getOne(movieID);
+    this.movieRepository.save({ ...movie, ...updateData });
   }
 }

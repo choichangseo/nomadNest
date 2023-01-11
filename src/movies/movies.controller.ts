@@ -7,7 +7,9 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { Movie } from './entities/Movie.entities';
+import { CreateMovieDTO } from './dto/create-movie.dto';
+import { UpdateMovieDTO } from './dto/update-movie.dto';
+import { Movie } from './entities/Movie.entity';
 import { MoviesService } from './movies.service';
 
 @Controller('movies')
@@ -15,26 +17,29 @@ export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
   @Get()
-  getAll(): Movie[] {
-    return this.moviesService.getAll();
+  async getAll(): Promise<Movie[]> {
+    return await this.moviesService.getAll();
   }
-  @Get(':id')
-  getOne(@Param('id') id: string): Movie {
-    return this.moviesService.getOne(id);
+  @Get(':movieID')
+  async getOne(@Param('movieID') movieID: number): Promise<Movie> {
+    return await this.moviesService.getOne(movieID);
   }
 
   @Post()
-  create(@Body() movieData) {
+  async create(@Body() movieData: CreateMovieDTO) {
     return this.moviesService.create(movieData);
   }
 
-  @Delete('/:id')
-  remove(@Param('id') id: string) {
-    return this.moviesService.deleteOne(id);
+  @Delete('/:movieID')
+  async remove(@Param('movieID') movieID: number) {
+    return this.moviesService.deleteOne(movieID);
   }
 
-  @Patch('/:id')
-  path(@Param('id') id: string, @Body() updateData) {
-    return this.moviesService.update(id, updateData);
+  @Patch('/:movieID')
+  async path(
+    @Param('movieID') movieID: number,
+    @Body() updateData: UpdateMovieDTO,
+  ) {
+    return this.moviesService.update(movieID, updateData);
   }
 }
